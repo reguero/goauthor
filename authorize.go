@@ -37,13 +37,14 @@ func checkEgroup(egroup string, username string) bool {
 	}
 	defer l.Close()
 
+	found := false
 	baseSuffix := "OU=Users,OU=Organic Units,DC=cern,DC=ch"
 	base := fmt.Sprintf("CN=%s,%s", username, baseSuffix)
 	filterSuffix := "OU=e-groups,OU=Workgroups,DC=cern,DC=ch)"
 	filter := fmt.Sprintf("(memberOf=CN=%s,%s", egroup, filterSuffix)
 	nestedFilter := fmt.Sprintf("(memberOf:1.2.840.113556.1.4.1941:=CN=%s,%s", egroup, filterSuffix)
 	exclDisabledPrefix := "(&(!(userAccountControl:1.2.840.113556.1.4.803:=2))(|"
-	attrs := []string{"dn", "cn"}
+	attrs := []string{"cn"}
 	exclDisabled := true
 	if exclDisabled {
 		filter = exclDisabledPrefix + filter + "))"
@@ -74,26 +75,35 @@ func checkEgroup(egroup string, username string) bool {
 			if err != nil {
 				submatch := re.FindStringSubmatch(err.Error())
 				if submatch != nil {
-					fmt.Printf("Not Found\n")
-					return false
+					found = false
 				} else {
 					log.Fatal(err)
+					found = false
 				}
 			} else {
-				fmt.Printf("Found\n")
-				return true
+				found = true
+				if len(sr.Entries) == 0 {
+					fmt.Printf("Egroup not existing\n")
+					found = false
+				}
 			}
 		} else {
 			log.Fatal(err)
-			return false
+			found = false
 		}
 	} else {
-		fmt.Printf("Found\n")
-		return true
+		found = true
+		if len(sr.Entries) == 0 {
+			fmt.Printf("Egroup not existing\n")
+			found = false
+		}
 	}
 
-	for _, entry := range sr.Entries {
-		fmt.Printf("%s: %v\n", entry.DN, entry.GetAttributeValue("cn"))
+	if found == true {
+		for _, entry := range sr.Entries {
+			fmt.Printf("%s: %v\n", entry.DN, entry.GetAttributeValue("cn"))
+		}
 	}
-	return false
+	return found
+
 }
