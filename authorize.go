@@ -16,6 +16,11 @@ func main() {
 	} else {
 		fmt.Printf("false\n")
 	}
+	if checkEgroup("spanish-gang", "marquina") == true {
+		fmt.Printf("true\n")
+	} else {
+		fmt.Printf("false\n")
+	}
 	if checkEgroup("ermis-lbaas-admins", "toto") == true {
 		fmt.Printf("true\n")
 	} else {
@@ -64,14 +69,14 @@ func checkEgroup(egroup string, username string) bool {
 		submatch := re.FindStringSubmatch(err.Error())
 		if submatch != nil {
 			fmt.Printf("Retrying\n")
-			searchRequest = ldap.NewSearchRequest(
+			nestedSearchRequest := ldap.NewSearchRequest(
 				base, // The base dn to search
 				ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 				nestedFilter, // The filter to apply
 				attrs,        // A list attributes to retrieve
 				nil,
 			)
-			sr, err = l.Search(searchRequest)
+			sr, err = l.Search(nestedSearchRequest)
 			if err != nil {
 				submatch := re.FindStringSubmatch(err.Error())
 				if submatch != nil {
