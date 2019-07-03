@@ -26,7 +26,17 @@ func main() {
 	} else {
 		fmt.Printf("false\n")
 	}
+	if checkEgroup("ermis-lbaas-admins", "marquina") == true {
+		fmt.Printf("true\n")
+	} else {
+		fmt.Printf("false\n")
+	}
 	if checkEgroup("toto", "reguero") == true {
+		fmt.Printf("true\n")
+	} else {
+		fmt.Printf("false\n")
+	}
+	if checkEgroup("ai-training", "reguero") == true {
 		fmt.Printf("true\n")
 	} else {
 		fmt.Printf("false\n")
@@ -66,8 +76,16 @@ func checkEgroup(egroup string, username string) bool {
 	re := regexp.MustCompile(".*No Such Object")
 	sr, err := l.Search(searchRequest)
 	if err != nil {
+		found = false
 		submatch := re.FindStringSubmatch(err.Error())
 		if submatch != nil {
+			fmt.Printf("Username not found\n")
+		} else {
+			log.Fatal(err)
+		}
+	} else {
+		found = true
+		if len(sr.Entries) == 0 {
 			fmt.Printf("Retrying\n")
 			nestedSearchRequest := ldap.NewSearchRequest(
 				base, // The base dn to search
@@ -78,37 +96,19 @@ func checkEgroup(egroup string, username string) bool {
 			)
 			sr, err = l.Search(nestedSearchRequest)
 			if err != nil {
-				submatch := re.FindStringSubmatch(err.Error())
-				if submatch != nil {
-					found = false
-				} else {
-					log.Fatal(err)
-					found = false
-				}
+				log.Fatal(err)
+				found = false
 			} else {
-				found = true
 				if len(sr.Entries) == 0 {
-					fmt.Printf("Egroup not existing\n")
 					found = false
 				}
 			}
-		} else {
-			log.Fatal(err)
-			found = false
-		}
-	} else {
-		found = true
-		if len(sr.Entries) == 0 {
-			fmt.Printf("Egroup not existing\n")
-			found = false
 		}
 	}
-
 	if found == true {
 		for _, entry := range sr.Entries {
 			fmt.Printf("%s: %v\n", entry.DN, entry.GetAttributeValue("cn"))
 		}
 	}
 	return found
-
 }
